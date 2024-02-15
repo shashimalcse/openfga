@@ -27,4 +27,14 @@ COPY --from=builder /bin/openfga /openfga
 # The container will be considered healthy if the gRPC health probe returns a successful response.
 HEALTHCHECK --interval=5s --timeout=30s --retries=3 CMD ["/usr/local/bin/grpc_health_probe", "-addr=:8081"]
 
+RUN adduser \
+    --disabled-password \
+    --gecos "" \
+    --home "/nonexistent" \
+    --shell "/sbin/nologin" \
+    --no-create-home \
+    --uid 10014 \
+    "choreo"
+USER 10014
+
 ENTRYPOINT ["/openfga"]
