@@ -1,3 +1,14 @@
+FROM debian as builder1
+
+RUN adduser \
+    --disabled-password \
+    --gecos "" \
+    --home "/nonexistent" \
+    --shell "/sbin/nologin" \
+    --no-create-home \
+    --uid 10014 \
+    "choreo"
+
 FROM cgr.dev/chainguard/go:1.21@sha256:40fb38b3f61d1ecdecd2bfe3d14fa621ab5e9ecb4c9ebba590276c2992f3e282 AS builder
 
 WORKDIR /app
@@ -16,6 +27,9 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 
 FROM cgr.dev/chainguard/static@sha256:afaa9c3ad3772105e115fe7fff5e8ef9909e7592777822930121df68c57d08cb
 
+COPY --from=builder1 /etc/passwd /etc/passwd
+COPY --from=builder1 /etc/group /etc/group
+
 EXPOSE 8081
 EXPOSE 8080
 EXPOSE 3000
@@ -27,14 +41,6 @@ COPY --from=builder /bin/openfga /openfga
 # The container will be considered healthy if the gRPC health probe returns a successful response.
 HEALTHCHECK --interval=5s --timeout=30s --retries=3 CMD ["/usr/local/bin/grpc_health_probe", "-addr=:8081"]
 
-RUN adduser \
-    --disabled-password \
-    --gecos "" \
-    --home "/nonexistent" \
-    --shell "/sbin/nologin" \
-    --no-create-home \
-    --uid 10014 \
-    "choreo"
 USER 10014
 
 ENTRYPOINT ["/openfga"]
